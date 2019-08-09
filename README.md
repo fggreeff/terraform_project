@@ -10,6 +10,10 @@ VPC solution with EC2 for production AWS with terraform
 any changes that are required for your infrastructure.
 - Apply the infrastructure changes `terraform apply -var-file="production.tfvars"`
 
+## Destroy infrastructure
+- cd `../infrastructure` dir
+- Infrastructure managed by Terraform will be destroyed when you run `terraform destroy -var-file="production.tfvars" `
+
 ## Prerequisites
 These steps should be familiar if you're familiar with AWS & terraform.
 
