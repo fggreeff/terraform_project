@@ -99,7 +99,7 @@ resource "aws_iam_role" "ec2_iam_role" {
   name               = "EC2-IAM-Role"
   assume_role_policy = <<EOF
 {
-    "Version" : "2019-11-10",
+    "Version" : "2019-12-24",
     "Statement": 
     [
         {
@@ -111,5 +111,28 @@ resource "aws_iam_role" "ec2_iam_role" {
         }
     ]
 }
-  EOF
+EOF
+}
+
+resource "aws_iam_role_policy" "ec2_iam_role_policy" {
+  name = "EC2-IAM-Policy"
+  role = "${aws_iam_role.ec2_iam_role.id}"
+  policy = <<EOF
+{
+    "Version" : "2019-12-24",
+        "Statement": 
+    [
+         {
+            "Effect" : "Allow",
+            "Action" : [
+                "ec2:*", 
+                "elasticloadbalancing:*",
+                "cloudwatch:*",
+                "logs:*"
+             ],
+             "Resource":"*" 
+         }
+    ]
+}
+EOF
 }
