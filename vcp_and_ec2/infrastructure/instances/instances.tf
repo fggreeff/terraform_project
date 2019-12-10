@@ -190,7 +190,7 @@ resource "aws_launch_configuration" "ec2_public_launch_configuration" {
   EOF
 }
 
-# Load balancer in front of ASG
+# Public Load balancer in front of ASG
 resource "aws_elb" "webapp_load_balancer" {
   name        = "Production-WebApp-LoadBalancer"
   internal    = false
@@ -207,6 +207,33 @@ resource "aws_elb" "webapp_load_balancer" {
     lb_protocol = "HTTP"
   }
   health_check {
+    healthy_threshold = 5
+    internal = 30
+    target = "HTTP:80/index.html"
+    timeout = 10
+    unhealthy_threshold = 5
+  }
+}
+
+# Backend / private load balancer
+resource "aws_elb" "backend_load_balancer" {
+  name        = "Production-Backend-LoadBalancer"
+  internal    = true
+  security_groups = ["${aws_security_group.elb_security_group.id}"]
+  subnets = [
+    "${data.terraform_remote_state.network_configuration.private_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.private_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.private_subnet_3_cidr}"]
+
+
+  "listener" {
+    instance_port = 80
+    instance_protocol = "HTTP"
+    lb_port = 80
+    lb_protocol = "HTTP"
+  }
+
+    health_check {
     healthy_threshold = 5
     internal = 30
     target = "HTTP:80/index.html"
