@@ -189,3 +189,28 @@ resource "aws_launch_configuration" "ec2_public_launch_configuration" {
     echo "<html><body><h1>Hello from Production Web App at intance <b>"$INSTANCE_ID"</b></h1></body></html>" > /var/www/html/index.html
   EOF
 }
+
+# Load balancer in front of ASG
+resource "aws_elb" "webapp_load_balancer" {
+  name        = "Production-WebApp-LoadBalancer"
+  internal    = false
+  security_groups = ["${aws_security_group.elb_security_group.id}"]
+  subnets = [
+    "${data.terraform_remote_state.network_configuration.public_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.public_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.public_subnet_3_cidr}"]
+
+  "listener" {
+    instance_port = 80
+    instance_protocol = "HTTP"
+    lb_port = 80
+    lb_protocol = "HTTP"
+  }
+  health_check {
+    healthy_threshold = 5
+    internal = 30
+    target = "HTTP:80/index.html"
+    timeout = 10
+    unhealthy_threshold = 5
+  }
+}
