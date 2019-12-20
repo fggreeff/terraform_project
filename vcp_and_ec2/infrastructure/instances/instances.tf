@@ -307,3 +307,17 @@ resource "aws_autoscaling_policy" "webapp_production_scaling_policy" {
 target_value=80.0 # if it hits 80 cpu usage, it will scale up
   }
 }
+
+resource "aws_autoscaling_policy" "backend_production_scaling_policy" {
+  autoscaling_group_name="${aws_autoscaling_group.ec2_private_autoscaling_group.name}"
+  name="Production-Backend-Autoscaling-Policy"
+  policy_type="TargetTrackingPolicy"
+  min_adjustment_magnitude=1
+  
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type="ASGAverageCPUUtilizarion"
+    }
+target_value=80.0 # if it hits 80 cpu usage, it will scale up
+  }
+}
