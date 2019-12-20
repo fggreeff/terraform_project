@@ -321,3 +321,10 @@ resource "aws_autoscaling_policy" "backend_production_scaling_policy" {
 target_value=80.0 # if it hits 80 cpu usage, it will scale up
   }
 }
+
+# keep track of autoscaling/traffic and be notified
+resource "aws_sns_topic" "webapp_production_autoscaling_alert_topic" {
+  display_name="Webapp_Autoscaling_Topic"
+  name="Webapp_Autoscaling_Topic"
+}
+
