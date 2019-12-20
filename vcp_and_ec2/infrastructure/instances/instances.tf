@@ -328,3 +328,9 @@ resource "aws_sns_topic" "webapp_production_autoscaling_alert_topic" {
   name="Webapp_Autoscaling_Topic"
 }
 
+# subscribe to topic to get notified (sms subscription)
+resource "aws_sns_topic_subscription" "webapp_production_autoscaling_sns_subscription" {
+  endpoint="+447450000000"
+  protocol="sms"
+  topic_arn="${aws_sns_topic.webapp_production_autoscaling_alert_topic.arn}"
+}
