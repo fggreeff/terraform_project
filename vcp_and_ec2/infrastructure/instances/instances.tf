@@ -56,7 +56,7 @@ resource "aws_security_group" "ec2_private_security_group" {
     from_port   = 0
     protocol    = "-1"
     to_port     = 0
-    cidr_blocks = ["${aws_security_group.ec2_public_security_group.id}"]
+    security_groups = ["${aws_security_group.ec2_public_security_group.id}"]
   }
 
   ingress {
@@ -240,4 +240,108 @@ resource "aws_elb" "backend_load_balancer" {
     timeout = 10
     unhealthy_threshold = 5
   }
+}
+
+# private EC2 ASG
+resource "aws_autoscaling_group" "ec2_private_autoscaling_group" {
+  name = "Production-Backend-AutoScalingGroup"
+  vpc_zone_identifier = [
+    "${data.terraform_remote_state.network_configuration.private_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.private_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.private_subnet_3_cidr}"
+  ]
+  max_size = "${var.max_instance_size}"
+  min_size = "${var.min_instance_size}"
+  launch_configuration = "${aws_launch_configuration.ec2_private_launch_configuration.name}"
+  health_check_type = "ELB"
+  load_balancers = ["${aws_elb.backend_load_balancer.name}"]
+
+  tag {
+    key = "Name"
+    propagate_at_launch = false
+    value = "Backend-EC2-Instance"
+  }
+  tag {
+    key = "Type"
+    propagate_at_launch = false
+    value = "Backend"
+  }
+}
+
+# public EC2 ASG
+resource "aws_autoscaling_group" "ec2_public_autoscaling_group" {
+  name = "Production-WebApp-AutoScalingGroup"
+  vpc_zone_identifier = [
+    "${data.terraform_remote_state.network_configuration.public_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.public_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.public_subnet_3_cidr}"
+  ]
+  max_size = "${var.max_instance_size}"
+  min_size = "${var.min_instance_size}"
+  launch_configuration = "${aws_launch_configuration.ec2_public_launch_configuration.name}"
+  health_check_type = "ELB"
+  load_balancers = ["${aws_elb.webapp_load_balancer.name}"]
+
+  tag {
+    key = "Name"
+    propagate_at_launch = false
+    value = "WebApp-EC2-Instance"
+  }
+  tag {
+    key = "Type"
+    propagate_at_launch = false
+    value = "WebApp"
+  }
+}
+
+resource "aws_autoscaling_policy" "webapp_production_scaling_policy" {
+  autoscaling_group_name="${aws_autoscaling_group.ec2_public_autoscaling_group.name}"
+  name="Production-Webapp-Autoscaling-Policy"
+  policy_type="TargetTrackingPolicy"
+  min_adjustment_magnitude=1
+  
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type="ASGAverageCPUUtilizarion"
+    }
+target_value=80.0 # if it hits 80 cpu usage, it will scale up
+  }
+}
+
+resource "aws_autoscaling_policy" "backend_production_scaling_policy" {
+  autoscaling_group_name="${aws_autoscaling_group.ec2_private_autoscaling_group.name}"
+  name="Production-Backend-Autoscaling-Policy"
+  policy_type="TargetTrackingPolicy"
+  min_adjustment_magnitude=1
+  
+  target_tracking_configuration {
+    predefined_metric_specification {
+      predefined_metric_type="ASGAverageCPUUtilizarion"
+    }
+target_value=80.0 # if it hits 80 cpu usage, it will scale up
+  }
+}
+
+# keep track of autoscaling/traffic and be notified
+resource "aws_sns_topic" "webapp_production_autoscaling_alert_topic" {
+  display_name="Webapp_Autoscaling_Topic"
+  name="Webapp_Autoscaling_Topic"
+}
+
+# subscribe to topic to get notified (sms subscription)
+resource "aws_sns_topic_subscription" "webapp_production_autoscaling_sns_subscription" {
+  endpoint="+447450000000"
+  protocol="sms"
+  topic_arn="${aws_sns_topic.webapp_production_autoscaling_alert_topic.arn}"
+}
+
+# autoscaling notification
+resource "aws_autoscaling_notification" "webapp_autoscaling_notification" {
+  group_names=["${aws_autoscaling_group.ec2_public_autoscaling_group.name}"]
+  notifications=[
+    "autoscaling:EC2_INSTANCE_LAUNCH",
+    "autoscaling:EC2_INSTANCE_TERMINATE",
+    "autoscaling:EC2_INSTANCE_LAUNCH_ERROR"
+  ]
+  topic_arn="${aws_sns_topic.webapp_production_autoscaling_alert_topic.arn}"
 }
