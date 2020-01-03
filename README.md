@@ -31,10 +31,21 @@ These steps should be familiar if you're familiar with AWS & terraform.
 - Create an AWS account
 - Setup IAM user
 - Create keypair
-- Setup S3 bucket for the TF scripts
+- Setup S3 bucket (called ``) for the TF scripts
 
 - Install aws-cli
 - Install terraform 
+
+## Prerequisites
+Once IAM user created, take note of the Access key ID & Secret key. We'll use this to configure aws and login using the cli. Edit and run [aws-cli-login](./aws-cli-login.sh). 
+Alternatively, set your env vars by running this in your terminal:
+
+```export AWS_ACCESS_KEY_ID="YOUR_ACCESS_KEY"```
+
+```export AWS_SECRET_ACCESS_KEY="YOUR_SECRET_KEY"```
+
+List S3 buckets to help test access: 
+```aws s3 ls```
 
 ## Source
 [VPC-with-EC2](https://www.udemy.com/vpc-solutions-with-ec2-for-production-aws-with-terraform/)
