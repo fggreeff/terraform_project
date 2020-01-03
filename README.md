@@ -1,6 +1,8 @@
 # terraform_project
 VPC solution with EC2 for production AWS with terraform
 
+## High Level Architecture
+![Architecture](architecture/aws_tf.png)
 
 ## Getting started
 - cd `../infrastructure` dir
@@ -9,6 +11,15 @@ VPC solution with EC2 for production AWS with terraform
 - Run `terraform plan -var-file="production.tfvars" ` to see
 any changes that are required for your infrastructure.
 - Apply the infrastructure changes `terraform apply -var-file="production.tfvars"`
+
+*Follow same instructions for the `intances` dir:
+- cd `../instances` dir
+- Initialise backend config
+```terraform init backend-config="backend-prod.config"```
+- Run `terraform plan -var-file="production.tfvars" ` to see
+any changes that are required for your infrastructure.
+- Apply the infrastructure changes `terraform apply -var-file="production.tfvars"`
+
 
 ## Destroy infrastructure
 - cd `../infrastructure` dir
