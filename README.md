@@ -31,7 +31,7 @@ These steps should be familiar if you're familiar with AWS & terraform.
 - Create an AWS account
 - Setup IAM user
 - Create keypair
-- Setup S3 bucket (called ``) for the TF scripts
+- Setup S3 bucket (This code used `terraform-remote-state-2019-07-30`) for the TF scripts
 
 - Install aws-cli
 - Install terraform 
@@ -46,6 +46,11 @@ Alternatively, set your env vars by running this in your terminal:
 
 List S3 buckets to help test access: 
 ```aws s3 ls```
+
+## Debug / tracing
+ In case of any issues, you get a detailed trace by setting an env var.
+
+`export TF_LOG=TRACE`
 
 ## Source
 [VPC-with-EC2](https://www.udemy.com/vpc-solutions-with-ec2-for-production-aws-with-terraform/)

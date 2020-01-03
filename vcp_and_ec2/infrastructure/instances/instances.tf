@@ -200,7 +200,7 @@ resource "aws_elb" "webapp_load_balancer" {
     "${data.terraform_remote_state.network_configuration.public_subnet_2_cidr}",
   "${data.terraform_remote_state.network_configuration.public_subnet_3_cidr}"]
 
-  "listener" {
+  listener {
     instance_port     = 80
     instance_protocol = "HTTP"
     lb_port           = 80
@@ -226,7 +226,7 @@ resource "aws_elb" "backend_load_balancer" {
   "${data.terraform_remote_state.network_configuration.private_subnet_3_cidr}"]
 
 
-  "listener" {
+  listener {
     instance_port     = 80
     instance_protocol = "HTTP"
     lb_port           = 80
