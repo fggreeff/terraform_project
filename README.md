@@ -7,7 +7,8 @@ VPC solution with EC2 for production AWS with terraform
 ## Getting started
 - cd `../infrastructure` dir
 - Initialise backend config
-```terraform init backend-config="infrastructure-prod.config"```
+```terraform init backend-config="infrastructure-prod.config"```. 
+In the case of the config not being picked up, run `terraform init` and manually provide the config values.
 - Run `terraform plan -var-file="production.tfvars" ` to see
 any changes that are required for your infrastructure.
 - Apply the infrastructure changes `terraform apply -var-file="production.tfvars"`

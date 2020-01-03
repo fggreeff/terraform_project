@@ -11,7 +11,7 @@ terraform {
 data "terraform_remote_state" "network_configuration" {
   backend = "s3"
 
-  config {
+  config = {
     bucket = "${var.remote_state_bucket}"
     key    = "${var.remote_state_key}"
     region = "${var.region}"
@@ -21,7 +21,7 @@ data "terraform_remote_state" "network_configuration" {
 resource "aws_security_group" "ec2_public_security_group" {
   name        = "EC2-Public-SG"
   description = "Internet reaching access for EC2 Instances"
-  vpc_id      = "${data.terraform_remote_state.network_configuration.vpc_id}"
+  vpc_id      = "${data.terraform_remote_state.network_configuration.outputs.vpc_id}"
 
 
   ingress {
@@ -49,7 +49,7 @@ resource "aws_security_group" "ec2_public_security_group" {
 resource "aws_security_group" "ec2_private_security_group" {
   name        = "EC2-Private-SG"
   description = "Only allow public SG resources to access these instances"
-  vpc_id      = "${data.terraform_remote_state.network_configuration.vpc_id}"
+  vpc_id      = "${data.terraform_remote_state.network_configuration.outputs.vpc_id}"
 
   # allow ingress traffic from pub security group
   ingress {
@@ -78,7 +78,7 @@ resource "aws_security_group" "ec2_private_security_group" {
 resource "aws_security_group" "elb_security_group" {
   name        = "ELB-SG"
   description = "ELB Security Group"
-  vpc_id      = "${data.terraform_remote_state.network_configuration.vpc_id}"
+  vpc_id      = "${data.terraform_remote_state.network_configuration.outputs.vpc_id}"
 
   # internet facing loadbalancer
   ingress {
@@ -145,11 +145,13 @@ resource "aws_iam_instance_profile" "ec2_instance_profile" {
 
 # Read latest ami from aws
 data "aws_ami" "launch_configuration_ami" {
-    most_recent = true
-    filter {
-        name   = "owner-alias"
-        values = ["amazon"]
-    }
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "owner-alias"
+    values = ["amazon"]
+  }
 }
 
 resource "aws_launch_configuration" "ec2_private_launch_configuration" {
@@ -196,9 +198,9 @@ resource "aws_elb" "webapp_load_balancer" {
   internal        = false
   security_groups = ["${aws_security_group.elb_security_group.id}"]
   subnets = [
-    "${data.terraform_remote_state.network_configuration.public_subnet_1_cidr}",
-    "${data.terraform_remote_state.network_configuration.public_subnet_2_cidr}",
-  "${data.terraform_remote_state.network_configuration.public_subnet_3_cidr}"]
+    "${data.terraform_remote_state.network_configuration.outputs.public_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.public_subnet_2_cidr}",
+  "${data.terraform_remote_state.network_configuration.outputs.public_subnet_3_cidr}"]
 
   listener {
     instance_port     = 80
@@ -208,7 +210,7 @@ resource "aws_elb" "webapp_load_balancer" {
   }
   health_check {
     healthy_threshold   = 5
-    internal            = 30
+    interval            = 30
     target              = "HTTP:80/index.html"
     timeout             = 10
     unhealthy_threshold = 5
@@ -221,9 +223,9 @@ resource "aws_elb" "backend_load_balancer" {
   internal        = true
   security_groups = ["${aws_security_group.elb_security_group.id}"]
   subnets = [
-    "${data.terraform_remote_state.network_configuration.private_subnet_1_cidr}",
-    "${data.terraform_remote_state.network_configuration.private_subnet_2_cidr}",
-  "${data.terraform_remote_state.network_configuration.private_subnet_3_cidr}"]
+    "${data.terraform_remote_state.network_configuration.outputs.private_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.private_subnet_2_cidr}",
+  "${data.terraform_remote_state.network_configuration.outputs.private_subnet_3_cidr}"]
 
 
   listener {
@@ -235,7 +237,7 @@ resource "aws_elb" "backend_load_balancer" {
 
   health_check {
     healthy_threshold   = 5
-    internal            = 30
+    interval            = 30
     target              = "HTTP:80/index.html"
     timeout             = 10
     unhealthy_threshold = 5
@@ -246,9 +248,9 @@ resource "aws_elb" "backend_load_balancer" {
 resource "aws_autoscaling_group" "ec2_private_autoscaling_group" {
   name = "Production-Backend-AutoScalingGroup"
   vpc_zone_identifier = [
-    "${data.terraform_remote_state.network_configuration.private_subnet_1_cidr}",
-    "${data.terraform_remote_state.network_configuration.private_subnet_2_cidr}",
-    "${data.terraform_remote_state.network_configuration.private_subnet_3_cidr}"
+    "${data.terraform_remote_state.network_configuration.outputs.private_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.private_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.private_subnet_3_cidr}"
   ]
   max_size             = "${var.max_instance_size}"
   min_size             = "${var.min_instance_size}"
@@ -272,9 +274,9 @@ resource "aws_autoscaling_group" "ec2_private_autoscaling_group" {
 resource "aws_autoscaling_group" "ec2_public_autoscaling_group" {
   name = "Production-WebApp-AutoScalingGroup"
   vpc_zone_identifier = [
-    "${data.terraform_remote_state.network_configuration.public_subnet_1_cidr}",
-    "${data.terraform_remote_state.network_configuration.public_subnet_2_cidr}",
-    "${data.terraform_remote_state.network_configuration.public_subnet_3_cidr}"
+    "${data.terraform_remote_state.network_configuration.outputs.public_subnet_1_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.public_subnet_2_cidr}",
+    "${data.terraform_remote_state.network_configuration.outputs.public_subnet_3_cidr}"
   ]
   max_size             = "${var.max_instance_size}"
   min_size             = "${var.min_instance_size}"
